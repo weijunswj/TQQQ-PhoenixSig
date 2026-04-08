@@ -17,14 +17,21 @@ describe('Singapore refresh schedule', () => {
   it('switches into the live-open key after the New York open refresh window', () => {
     const nowMs = Date.parse('2026-03-30T13:35:00.000Z');
 
-    expect(currentSingaporeRefreshKey(nowMs)).toBe('2026-03-30-live-open');
-    expect(new Date(nextSingaporeRefreshTimeMs(nowMs)).toISOString()).toBe('2026-03-30T20:45:00.000Z');
+    expect(currentSingaporeRefreshKey(nowMs)).toBe('2026-03-30-live-open-09');
+    expect(new Date(nextSingaporeRefreshTimeMs(nowMs)).toISOString()).toBe('2026-03-30T14:00:00.000Z');
   });
 
-  it('keeps the live-open key until the last-close refresh window', () => {
+  it('refreshes hourly during the live-open window', () => {
     const nowMs = Date.parse('2026-03-27T14:30:00.000Z');
 
-    expect(currentSingaporeRefreshKey(nowMs)).toBe('2026-03-27-live-open');
+    expect(currentSingaporeRefreshKey(nowMs)).toBe('2026-03-27-live-open-10');
+    expect(new Date(nextSingaporeRefreshTimeMs(nowMs)).toISOString()).toBe('2026-03-27T15:00:00.000Z');
+  });
+
+  it('caps live-open hourly refreshes at the last-close refresh window', () => {
+    const nowMs = Date.parse('2026-03-27T20:35:00.000Z');
+
+    expect(currentSingaporeRefreshKey(nowMs)).toBe('2026-03-27-live-open-16');
     expect(new Date(nextSingaporeRefreshTimeMs(nowMs)).toISOString()).toBe('2026-03-27T20:45:00.000Z');
   });
 

@@ -12,6 +12,7 @@ type PlainDate = {
 
 type NewYorkClock = PlainDate & {
   weekday: number;
+  hour: number;
   minuteOfDay: number;
 };
 
@@ -58,6 +59,7 @@ const getNewYorkClock = (nowMs: number): NewYorkClock => {
     month: Number(parts.month),
     day: Number(parts.day),
     weekday: weekdayMap[parts.weekday] ?? 0,
+    hour: Number(parts.hour),
     minuteOfDay: (Number(parts.hour) * 60) + Number(parts.minute),
   };
 };
@@ -145,7 +147,12 @@ const currentRefreshState = (
 };
 
 export const currentSingaporeRefreshKey = (nowMs: number = Date.now()): string => {
+  const clock = getNewYorkClock(nowMs);
   const state = currentRefreshState(nowMs);
+  if (state.phase === 'live-open') {
+    const hourBucket = String(clock.hour).padStart(2, '0');
+    return `${plainDateKey(state.keyDate)}-${state.phase}-${hourBucket}`;
+  }
   return `${plainDateKey(state.keyDate)}-${state.phase}`;
 };
 
@@ -161,11 +168,13 @@ export const nextSingaporeRefreshTimeMs = (nowMs: number = Date.now()): number =
   }
 
   if (isWeekday(clock.weekday) && clock.minuteOfDay < LAST_CLOSE_REFRESH_MINUTE) {
-    return zonedTimeToUtcMs(
-      today,
-      Math.floor(LAST_CLOSE_REFRESH_MINUTE / 60),
-      LAST_CLOSE_REFRESH_MINUTE % 60,
-    );
+    if (clock.minuteOfDay >= OPEN_REFRESH_MINUTE) {
+      const nextHourlyRefreshMinute = (Math.floor(clock.minuteOfDay / 60) + 1) * 60;
+      const nextMinuteOfDay = Math.min(nextHourlyRefreshMinute, LAST_CLOSE_REFRESH_MINUTE);
+      return zonedTimeToUtcMs(today, Math.floor(nextMinuteOfDay / 60), nextMinuteOfDay % 60);
+    }
+
+    return zonedTimeToUtcMs(today, Math.floor(LAST_CLOSE_REFRESH_MINUTE / 60), LAST_CLOSE_REFRESH_MINUTE % 60);
   }
 
   const nextTradingDate = shiftTradingDate(today, 1);
