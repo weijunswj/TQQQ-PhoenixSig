@@ -96,7 +96,7 @@ const fetchTicker = async (
   url.searchParams.set('interval', '1d');
   url.searchParams.set('events', 'history');
 
-  const res = await fetch(url, { next: { revalidate: 3600 } });
+  const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error(`Yahoo fetch failed for ${ticker}`);
 
   const json = await res.json();
